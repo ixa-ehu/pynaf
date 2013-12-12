@@ -77,7 +77,7 @@ class NAFDocument:
     valid_external_attributes = ("resource", "reference", "reftype", "status", "source", "confidence")
     valid_externalRef_attributes = ("resource", "reference")
 
-    def __init__(self, file_name=None, NAF_stream=None, language=None, version="1.0", NAF_header=None):
+    def __init__(self, file_name=None, input_stream=None, language=None, version="1.0", header=None):
         """ Prepare the document basic structure.
         """
         if file_name:
