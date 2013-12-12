@@ -13,7 +13,7 @@ LANGUAGE_ATTRIBUTE = "{http://www.w3.org/XML/1998/namespace}lang"
 VERSION_ATTRIBUTE = "version"
 NS = {}
 
-HEADER_TAG = "NAFHeader"
+HEADER_TAG = "nafHeader"
 NAME_ATTRIBUTE = "name"
 LINGUISTIC_PROCESSOR_HEAD = "linguisticProcessors"
 LAYER_ATTRIBUTE = "layer"
