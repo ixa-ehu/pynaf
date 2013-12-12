@@ -84,7 +84,7 @@ class NAFDocument:
             self.tree = etree.parse(file_name)#, parser=parser)
             self.root = self.tree.getroot()
         elif input_stream:
-            self.root = etree.fromstring(NAF_stream)#, parser=parser)
+            self.root = etree.fromstring(input_stream)#, parser=parser)
             self.tree = etree.ElementTree(self.root)
         else:
             self.root = etree.Element(NAF_TAG, NS)
