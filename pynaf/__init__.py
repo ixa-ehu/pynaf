@@ -13,7 +13,7 @@ LANGUAGE_ATTRIBUTE = "{http://www.w3.org/XML/1998/namespace}lang"
 VERSION_ATTRIBUTE = "version"
 NS = {}
 
-NAF_HEADER_TAG = "NAFHeader"
+HEADER_TAG = "NAFHeader"
 NAME_ATTRIBUTE = "name"
 LINGUISTIC_PROCESSOR_HEAD = "linguisticProcessors"
 LAYER_ATTRIBUTE = "layer"
@@ -83,7 +83,7 @@ class NAFDocument:
         if file_name:
             self.tree = etree.parse(file_name)#, parser=parser)
             self.root = self.tree.getroot()
-        elif NAF_stream:
+        elif input_stream:
             self.root = etree.fromstring(NAF_stream)#, parser=parser)
             self.tree = etree.ElementTree(self.root)
         else:
@@ -95,14 +95,14 @@ class NAFDocument:
         if version:
             self.root.set(VERSION_ATTRIBUTE, version)
 
-        headers = self.tree.find(NAF_HEADER_TAG)
+        headers = self.tree.find(HEADER_TAG)
         if headers is not None and len(headers):
-            self.NAF_header = headers
+            self.header = headers
         else:
-            self.NAF_header = None
+            self.header = None
 
-        if NAF_header:
-            self.set_header(NAF_header)
+        if header:
+            self.set_header(header)
 
         text_layer = self.tree.find(TEXT_LAYER_TAG)
         if text_layer is not None and len(text_layer):
@@ -147,27 +147,27 @@ class NAFDocument:
             self.coreferences = None
 
     def clear_header(self):
-        self.root.remove(self.NAF_header)
-        self.NAF_header = None
+        self.root.remove(self.header)
+        self.header = None
 
-    def set_header(self, NAF_header):
-        if self.NAF_header:
-            for element in NAF_header:
-                self.NAF_header.append(element)
-            self.NAF_header.attrib.update(NAF_header.attrib)
+    def set_header(self, header):
+        if self.header:
+            for element in header:
+                self.header.append(element)
+            self.header.attrib.update(header.attrib)
         else:
-            self.NAF_header = NAF_header
-            self.root.append(self.NAF_header)
+            self.header = header
+            self.root.append(self.header)
 
     def add_linguistic_processors(self, layer, name, version, time_stamp):
-        if not self.NAF_header:
-            self.NAF_header = etree.SubElement(self.root, NAF_HEADER_TAG)
+        if not self.header:
+            self.header = etree.SubElement(self.root, HEADER_TAG)
 
-        layer_find = self.NAF_header.find("{0}[@{1}='{2}']".format(LINGUISTIC_PROCESSOR_HEAD, LAYER_ATTRIBUTE, layer))
+        layer_find = self.header.find("{0}[@{1}='{2}']".format(LINGUISTIC_PROCESSOR_HEAD, LAYER_ATTRIBUTE, layer))
         if layer_find:
             layer = layer_find[0]
         else:
-            layer = etree.SubElement(self.NAF_header, LINGUISTIC_PROCESSOR_HEAD, {LAYER_ATTRIBUTE: layer})
+            layer = etree.SubElement(self.header, LINGUISTIC_PROCESSOR_HEAD, {LAYER_ATTRIBUTE: layer})
 
         etree.SubElement(layer, LINGUISTIC_PROCESSOR_OCCURRENCE_TAG,
                          {NAME_ATTRIBUTE: name, VERSION_ATTRIBUTE: version, TIMESTAMP_ATTRIBUTE: time_stamp})
