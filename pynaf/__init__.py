@@ -396,7 +396,7 @@ class NAFDocument:
         if references:
             for reference, form in references:
                 comment = etree.Comment(form.decode("utf-8"))
-                entity.append(comment)
+                entity.append(comment + ' ')
                 span = etree.SubElement(entity, SPAN_TAG)
                 for token in reference:
                     etree.SubElement(span, TARGET_TAG, {TARGET_ID_ATTRIBUTE: token})
