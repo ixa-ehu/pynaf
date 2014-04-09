@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 """Module for manage NAF formatted files. """
 
-__author__ = 'Josu Bermudez <josu.bermudez@deusto.es>'
+__author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
 
 
 from xml.etree import cElementTree as etree
@@ -344,7 +344,9 @@ class NAFDocument:
         entity = etree.SubElement(self.entities, NAMED_ENTITY_OCCURRENCE_TAG, entity_attributes)
         references_tag = etree.SubElement(entity, "references")
         if references:
-            for reference in references:
+            for reference,form in references:
+                comment = etree.Comment(form.decode("utf-8").replace("-"," - "))
+                entity.append(comment)
                 span = etree.SubElement(references_tag, SPAN_TAG)
                 for token in reference:
                     etree.SubElement(span, TARGET_TAG, {TARGET_ID_ATTRIBUTE: token})
