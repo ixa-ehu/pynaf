@@ -341,7 +341,7 @@ class NAFDocument:
         entity_attributes = {NAMED_ENTITY_ID_ATTRIBUTE: eid}
         if entity_type:
             entity_attributes[NAMED_ENTITY_TYPE_ATTRIBUTE] = entity_type
-        entity = etree.SubElement(self.entities, NAMED_ENTITY_OCCURRENCE_TAG, entity_attributes)
+        entity = etree.SubElement(self.entities, NAMED_ENTITY_OCCURRENCE_TAG, entity_attributes,NAMED_ENTITY_REFERENCES_GROUP_TAG)
         references_tag = etree.SubElement(entity, "references")
         if references:
             for reference,form in references:
