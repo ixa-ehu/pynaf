@@ -86,7 +86,7 @@ EXTERNAL_REFERENCES_TAG = "externalReferences"
 
 
 
-class KafDocument:
+class NAFDocument:
     """ Manage a NAF document.
     """
     valid_word_attributes = ("sent", "para", "offset", "length", "page")
