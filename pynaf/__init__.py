@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 
 __author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
 
+#from xml.etree import cElementTree as etree
+from lxml import etree
 
-from xml.etree import cElementTree as etree
 
 # CONSTANT TEXT VALUES USED TO CONSTRUCT NAF
 KAF_TAG = "NAF"
