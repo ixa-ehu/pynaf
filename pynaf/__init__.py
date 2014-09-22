@@ -8,26 +8,24 @@ __author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
 from xml.etree import cElementTree as etree
 
 # CONSTANT TEXT VALUES USED TO CONSTRUCT NAF
-NAF_TAG = "NAF"
+KAF_TAG = "NAF"
 LANGUAGE_ATTRIBUTE = "{http://www.w3.org/XML/1998/namespace}lang"
 VERSION_ATTRIBUTE = "version"
 NS = {}
 
-HEADER_TAG = "nafHeader"
+KAF_HEADER_TAG = "nafHeader"
 NAME_ATTRIBUTE = "name"
 LINGUISTIC_PROCESSOR_HEAD = "linguisticProcessors"
 LAYER_ATTRIBUTE = "layer"
 LINGUISTIC_PROCESSOR_OCCURRENCE_TAG = "lp"
 TIMESTAMP_ATTRIBUTE = "timestamp"
 
-SPAN_TAG = "span"
-TARGET_ID_ATTRIBUTE = "id"
-TARGET_TAG = "target"
-
+# Text layer
 TEXT_LAYER_TAG = "text"
 WORD_OCCURRENCE_TAG = "wf"
 WORD_ID_ATTRIBUTE = "id"
 
+# Term layer
 TERMS_LAYER_TAG = "terms"
 TERM_OCCURRENCE_TAG = "term"
 TERM_ID_ATTRIBUTE = "id"
@@ -37,57 +35,82 @@ LEMMA_ATTRIBUTE = "lemma"
 POS_ATTRIBUTE = "pos"
 MORPHOFEAT_ATTRIBUTE = "morphofeat"
 
-NAMED_ENTITIES_LAYER_TAG = "entities"
-NAMED_ENTITY_OCCURRENCE_TAG = "entity"
-NAMED_ENTITY_ID_ATTRIBUTE = "id"
-NAMED_ENTITY_TYPE_ATTRIBUTE = "type"
-NAMED_ENTITY_REFERENCES_GROUP_TAG = "references"
-
-CONSTITUENCY_LAYER = "constituency"
-CONSTITUENCY_TREE_TAG = "tree"
-CONSTITUENCY_NON_TERMINALS = "nt"
-CONSTITUENCY_TERMINALS = "t"
-CONSTITUENCY_EDGES = "edge"
-
+# Chunking layer
 CHUNKS_LAYER_TAG = "chunks"
 CHUNK_OCCURRENCE_TAG = "chunk"
 CHUNK_CASE_ATTRIBUTE = "case"
 CHUNK_PHRASE_ATTRIBUTE = "phrase"
 CHUNK_HEAD_ATTRIBUTE = "head"
-CHUNK_ID_ATTRIBUTE = "id"
+CHUNK_ID_ATTRIBUTE = "cid"
 
+# Constituency Layer
+CONSTITUENCY_LAYER = "constituency"
+CONSTITUENCY_TREE_TAG = "tree"
+CONSTITUENCY_ID_ATTRIBUTE = "id"
+CONSTITUENCY_LABEL_ATTRIBUTE = "label"
+CONSTITUENCY_NON_TERMINALS = "nt"
+CONSTITUENCY_TERMINALS = "t"
+CONSTITUENCY_EDGES = "edge"
+CONSTITUENCY_EDGE_ID_ATTRIBUTE = "id"
+CONSTITUENCY_EDGE_FORM_ATTRIBUTE = "from"
+CONSTITUENCY_EDGE_TO_ATTRIBUTE = "to"
+
+# Dependency Layer
 DEPENDENCY_LAYER_TAG = "deps"
 DEPENDENCY_OCCURRENCE_TAG = "dep"
 DEPENDENCY_FROM_ATTRIBUTE = "from"
 DEPENDENCY_FUNCTION_ATTRIBUTE = "rfunc"
 DEPENDENCY_TO_ATTRIBUTE = "to"
 
-EXTERNAL_REFERENCE_OCCURRENCE_TAG = "externalRef"
-EXTERNAL_REFERENCES_TAG = "externalReferences"
-
+# Coreference Layer
 COREFERENCE_LAYER_TAG = "coreferences"
 COREFERENCE_ID_ATTRIBUTE = "id"
 COREFERENCE_OCCURRENCE_TAG = "coref"
 
+# Name Entity layer
+NAMED_ENTITIES_LAYER_TAG = "entities"
+NAMED_ENTITY_OCCURRENCE_TAG = "entity"
+NAMED_ENTITY_ID_ATTRIBUTE = "id"
+NAMED_ENTITY_TYPE_ATTRIBUTE = "type"
+NAMED_ENTITY_REFERENCES_GROUP_TAG = "references"
 
-class NAFDocument:
+# References tags
+SPAN_TAG = "span"
+TARGET_ID_ATTRIBUTE = "id"
+TARGET_TAG = "target"
+
+# External references
+
+EXTERNAL_REFERENCE_OCCURRENCE_TAG = "externalRef"
+EXTERNAL_REFERENCES_TAG = "externalReferences"
+
+
+
+class KafDocument:
     """ Manage a NAF document.
     """
     valid_word_attributes = ("sent", "para", "offset", "length", "page")
-    valid_external_attributes = ("resource", "reference", "reftype", "status", "source", "confidence")
+    valid_external_attributes = ("resource", "reference", "reftype", "status", "source",
+                                 "confidence")
     valid_externalRef_attributes = ("resource", "reference")
 
-    def __init__(self, file_name=None, input_stream=None, language=None, version="1.0", header=None):
+    def __init__(self, file_name=None, input_stream=None, language=None, version="2.0", header=None,
+                 encoding="utf-8"):
         """ Prepare the document basic structure.
         """
+        parser = etree.XMLParser(remove_comments=False)
+        etree.set_default_parser(parser)
+
         if file_name:
-            self.tree = etree.parse(file_name)#, parser=parser)
+            self.tree = etree.parse(file_name)
             self.root = self.tree.getroot()
         elif input_stream:
-            self.root = etree.fromstring(input_stream)#, parser=parser)
+            if isinstance(input_stream, unicode):
+                input_stream = input_stream.encode(encoding)
+            self.root = etree.fromstring(input_stream)
             self.tree = etree.ElementTree(self.root)
         else:
-            self.root = etree.Element(NAF_TAG, NS)
+            self.root = etree.Element(KAF_TAG, NS)
             self.tree = etree.ElementTree(self.root)
         if language:
             self.root.attrib[LANGUAGE_ATTRIBUTE] = language
@@ -95,11 +118,11 @@ class NAFDocument:
         if version:
             self.root.set(VERSION_ATTRIBUTE, version)
 
-        headers = self.tree.find(HEADER_TAG)
+        headers = self.tree.find(KAF_HEADER_TAG)
         if headers is not None and len(headers):
-            self.header = headers
+            self.kaf_header = headers
         else:
-            self.header = None
+            self.kaf_header = None
 
         if header:
             self.set_header(header)
@@ -142,40 +165,60 @@ class NAFDocument:
 
         coreference_layer = self.tree.find(COREFERENCE_LAYER_TAG)
         if coreference_layer is not None and len(coreference_layer):
-            self.coreferences = coreference_layer
+            self.coreference = coreference_layer
         else:
-            self.coreferences = None
+            self.coreference = None
 
     def clear_header(self):
-        self.root.remove(self.header)
-        self.header = None
+        """ Remove the kaf header
+        """
+        self.root.remove(self.kaf_header)
+        self.kaf_header = None
 
-    def set_header(self, header):
-        if self.header:
-            for element in header:
-                self.header.append(element)
-            self.header.attrib.update(header.attrib)
+    def set_header(self, kaf_header):
+        """ Append headers to the head. If head doesn't exist it is created.
+
+        :param kaf_header: A dict that contains header elements and their attributes
+        """
+        if self.kaf_header:
+            for element in kaf_header:
+                self.kaf_header.append(element)
+            self.kaf_header.attrib.update(kaf_header.attrib)
         else:
-            self.header = header
-            self.root.append(self.header)
+            self.kaf_header = kaf_header
+            self.root.append(self.kaf_header)
 
     def add_linguistic_processors(self, layer, name, version, time_stamp):
-        if not self.header:
-            self.header = etree.SubElement(self.root, HEADER_TAG)
+        """Add a Linguistic processor to the head.
 
-        layer_find = self.header.find("{0}[@{1}='{2}']".format(LINGUISTIC_PROCESSOR_HEAD, LAYER_ATTRIBUTE, layer))
+
+        :param layer: Linguistic layer name
+        :param name: Processor name
+        :param version: Processor version
+        :param time_stamp: Processing time Stamp
+        """
+        if not self.kaf_header:
+            self.kaf_header = etree.SubElement(self.root, KAF_HEADER_TAG)
+
+        layer_find = self.kaf_header.find("./{0}..[@{1}='{2}']".format(
+            LINGUISTIC_PROCESSOR_HEAD, LAYER_ATTRIBUTE, layer))
         if layer_find:
             layer = layer_find[0]
         else:
-            layer = etree.SubElement(self.header, LINGUISTIC_PROCESSOR_HEAD, {LAYER_ATTRIBUTE: layer})
+            layer = etree.SubElement(self.kaf_header, LINGUISTIC_PROCESSOR_HEAD, {
+                LAYER_ATTRIBUTE: layer})
 
         etree.SubElement(layer, LINGUISTIC_PROCESSOR_OCCURRENCE_TAG,
-                         {NAME_ATTRIBUTE: name, VERSION_ATTRIBUTE: version, TIMESTAMP_ATTRIBUTE: time_stamp})
+                         {NAME_ATTRIBUTE: name,
+                          VERSION_ATTRIBUTE: version,
+                          TIMESTAMP_ATTRIBUTE: time_stamp})
 
     def add_word(self, word, wid, **kwargs):
-        """Add a WF to the NAF file.
-        A WF have the next parameters/attributes;
-            + id: the unique id for the word form.
+        """Add a word to the KAF file.
+        A word have the next parameters/attributes;
+        :param word: The word form
+        :param wid: the unique id for the word form.
+        :param kwargs: The word optional parameters
             + sent: sentence id of the token (optional)
             + para: paragraph id (optional)
             + offset: the offset of the word form (optional)
@@ -183,13 +226,15 @@ class NAFDocument:
             + page: page id (optional)
         """
         # Prepare the word attributes
-        word_attributes = dict((k, v) for (k, v) in kwargs.iteritems() if k in self.valid_word_attributes)
+        word_attributes = dict((k, v)
+                               for (k, v) in kwargs.iteritems() if k in self.valid_word_attributes)
         word_attributes[WORD_ID_ATTRIBUTE] = wid
-        # Create a text subnode for the word and set its attributes
+        # Create a text sub-node for the word and set its attributes
         element = etree.SubElement(self.text, WORD_OCCURRENCE_TAG, word_attributes)
         try:
             element.text = word
-        except:
+        #TODO log this
+        except Exception:
             element.text = "XXXXXX"
         return element
 
@@ -198,27 +243,31 @@ class NAFDocument:
         return self.text[:]
 
     def get_words_by_id(self, wid):
-        """ Return all the words in the document"""
-        results = self.text.find("{0}[@{1}='{2}']".format(WORD_OCCURRENCE_TAG, WORD_ID_ATTRIBUTE, wid))
+        """ Return all the words in the document
+        :param wid: WID of the word to retrieve.
+        """
+        results = self.text.find("{0}[@{1}='{2}']".format(
+            WORD_OCCURRENCE_TAG, WORD_ID_ATTRIBUTE, wid))
         return results and results[0]
 
-    def add_term(self, tid, pos=None, lemma=None, morphofeat=None, term_type=None, words=(), ner=None,
-                 external_refs=()):
-        """Add a term to the NAF file.
+    def add_term(self, tid, pos=None, lemma=None, morphofeat=None, term_type=None, words=(),
+                 ner=None, external_refs=()):
+        """Add a term to the kaf file.
         A Term have the next parameters/attributes:
-            tid: unique identifier
-            type: type of the term. Currently, 3 values are possible:
+        :param tid: unique identifier
+        :param term_type: type of the term. Currently, 3 values are possible:
                 + open: open category term
                 + close: close category term
-            lemma: lemma of the term
-            pos: part of speech
-            morphofeat: PennTreebank part of speech tag
-            word: a list of id of the bounded words.
-            external_ref: A list of dictionaries that contains the external references.
+        :param lemma: lemma of the term
+        :param pos: part of speech
+        :param morphofeat: PennTreebank part of speech tag
+        :param words: a list of id of the bounded words.
+        :param external_refs: A list of dictionaries that contains the external references.
                 Each reference have:
                     + resource
                     + reference
                     + INCOMPLETE
+        :param ner: Term NER attribute.
         """
         if self.terms is None:
             self.terms = etree.SubElement(self.root, TERMS_LAYER_TAG)
@@ -257,27 +306,40 @@ class NAFDocument:
         """ Return all the words in the document"""
         return self.root.findall("{0}/{1}".format(TERMS_LAYER_TAG, TERM_OCCURRENCE_TAG))
 
-    def get_terms_words(self, term):
+    @staticmethod
+    def get_terms_words(term):
+        """ Get the words that forms the term.
+        :param term: Term node whose words are wanted.
+
+        """
         return term.findall("{0}/{1}".format(SPAN_TAG, TARGET_TAG))
 
-    def get_terms_references(self, term):
-        return term.findall("{0}/{1}".format(EXTERNAL_REFERENCES_TAG, EXTERNAL_REFERENCE_OCCURRENCE_TAG))
+    @staticmethod
+    def get_terms_references(term):
+        """ Get references of a term.
+        :param term: the term whose references are wanted.
+
+        """
+        return term.findall("{0}/{1}".format(
+            EXTERNAL_REFERENCES_TAG, EXTERNAL_REFERENCE_OCCURRENCE_TAG))
 
     def add_dependency(self, origen, to, rfunc):
         """Add a new dependency relation in the text.
         The dependency have the next parameters/attributes:
-            + from: term id of the source element
-            + to: term id of the target element
-            + rfunc: relational function. One of:
+        :param origen: term id of the source element
+        :param to: term id of the target element
+        :param rfunc: relational function. One of:
                 - mod: indicates the word introducing the dependent in a head- modifier relation.
                 - subj: indicates the subject in the grammatical relation Subject-Predicate.
-                - csubj, xsubj, ncsubj: The Grammatical Relations (RL)  csubj and xsubj may be used for clausal
-                    subjects, controlled from within, or without,  respectively. ncsubj is a non-clausal subject.
-                - dobj: Indicates the object in the grammatical relation between a predicate and its direct object.
-                - iobj: The relation between a predicate and a non-clausal complement introduced by a preposition;
-                    type indicates the preposition introducing the dependent.
-                - obj2: The relation between a predicate and the second non-clausal complement in ditransitive
-                    constructions.
+                - csubj, xsubj, ncsubj: The Grammatical Relations (RL)  csubj and xsubj may be used
+                        for clausal subjects, controlled from within, or without,  respectively.
+                        ncsubj is a non-clausal subject.
+                - dobj: Indicates the object in the grammatical relation between a predicate and
+                        its direct object.
+                - iobj: The relation between a predicate and a non-clausal complement introduced
+                        by a preposition; type indicates the preposition introducing the dependent.
+                - obj2: The relation between a predicate and the second non-clausal complement in
+                        ditransitive constructions.
         """
         if not self.dependencies:
             self.dependencies = etree.SubElement(self.root, DEPENDENCY_LAYER_TAG)
@@ -292,23 +354,27 @@ class NAFDocument:
         return self.root.findall("{0}/{1}".format(DEPENDENCY_LAYER_TAG, DEPENDENCY_OCCURRENCE_TAG))
 
     def add_chunk(self, cid, head, phrase, case=None, terms=()):
-        """"Add a chunk to the NAF document.
-        Chunks are noun or prepositional phrases, spanning terms.A chunk have the following parameters/attributes:
-            + id: unique identifier
-            + head: the chunk head's term id
-            + phrase: typo of the phrase.Valid values for the phrase elements are one of the following:
-                - NP: noun phrase
-                - VP: verbal phrase
-                - PP: prepositional phrase
-                - S: sentence
-                - O: other
-            + case (optional): declension case
+        """"Add a chunk to the kaf document.
+        Chunks are noun or prepositional phrases, spanning terms.A chunk have the following
+        parameters/attributes:
+        :param cid: unique identifier
+        :param head: the chunk head's term id
+        :param phrase: typo of the phrase.Valid values for the phrase elements are one of the
+                    following:
+                        - NP: noun phrase
+                        - VP: verbal phrase
+                        - PP: prepositional phrase
+                        - S: sentence
+                        - O: other
+        :param case: (optional): declension case
+        :param terms: terms that form the chunk.
         """
         # Secure the root
         if not self.chunks:
             self.chunks = etree.SubElement(self.root, CHUNKS_LAYER_TAG)
             # Prepare the attributes
-        chunk_attributes = {CHUNK_ID_ATTRIBUTE: cid, CHUNK_HEAD_ATTRIBUTE: head, CHUNK_PHRASE_ATTRIBUTE: phrase}
+        chunk_attributes = {
+            CHUNK_ID_ATTRIBUTE: cid, CHUNK_HEAD_ATTRIBUTE: head, CHUNK_PHRASE_ATTRIBUTE: phrase}
         if case:
             chunk_attributes[CHUNK_CASE_ATTRIBUTE] = case
             # Create , and attach, the chunk
@@ -324,13 +390,83 @@ class NAFDocument:
         """Return all the chunks of the text"""
         return self.root.findall("{0}/{1}".format(DEPENDENCY_LAYER_TAG, DEPENDENCY_OCCURRENCE_TAG))
 
-    def get_chunk_terms(self, chunk):
-        """Return all the terms of a chunk."""
+    @staticmethod
+    def get_chunk_terms(chunk):
+        """Return all the terms of a chunk.
+        :param chunk: The chunk node whose terms are wanted"""
         return chunk.findall("{0}/{1}".format(SPAN_TAG, TARGET_TAG))
+
+    def get_constituency_trees(self):
+        """Return all the constituency trees in the document"""
+        return self.root.findall("{0}/{1}".format(CONSTITUENCY_LAYER, CONSTITUENCY_TREE_TAG))
+
+    @staticmethod
+    def get_constituent_tree_non_terminals(tree):
+        """Get all the non terminal constituents of the tree.
+        :param tree: The tree whose elements are wanted.
+        """
+        return tree.findall(CONSTITUENCY_NON_TERMINALS)
+
+    @staticmethod
+    def get_constituent_tree_terminals(tree):
+        """Get all the terminal constituents of the tree.
+        :param tree: The tree whose elements are wanted.
+        """
+        return tree.findall(CONSTITUENCY_TERMINALS)
+
+    @staticmethod
+    def get_constituent_tree_edges(tree):
+        """Get all the edges of the tree.
+        :param tree: The tree whose elements are wanted.
+        """
+        return tree.findall(CONSTITUENCY_EDGES)
+
+    @staticmethod
+    def get_constituent_terminal_words(constituent):
+        """Return all the terms of a terminal constituent.
+        :param constituent: The constituent whose terminal words are wanted.
+        """
+        return constituent.findall("{0}/{1}".format(SPAN_TAG, TARGET_TAG))
+
+    def add_constituency_tree(self, no_terminals, terminals, edges):
+        """ Create and attach the tree to the document and include al noo-terminals, terminals and
+        edges that conforms the tree.
+
+
+        :param no_terminals: no terminal tuples(constituent_id, constituent_Label)
+        :param terminals: Terminal tuples(constituent_id, [term_id])
+        :param edges:  Edge tuples(edge_id, form_id,to_id, head) head is optional(default = false)
+        """
+        if self.constituency is None:
+            self.constituency = etree.SubElement(self.root, CONSTITUENCY_LAYER)
+
+        tree = etree.SubElement(self.constituency, CONSTITUENCY_TREE_TAG)
+
+        for no_terminal in no_terminals:
+            etree.SubElement(tree, CONSTITUENCY_NON_TERMINALS, {
+                CONSTITUENCY_ID_ATTRIBUTE: no_terminal[0],
+                CONSTITUENCY_LABEL_ATTRIBUTE: no_terminal[1]})
+
+        for terminal in terminals:
+            terminal_node = etree.SubElement(tree, CONSTITUENCY_TERMINALS, {
+                CONSTITUENCY_ID_ATTRIBUTE: terminal[0]})
+            span_node = etree.SubElement(terminal_node, SPAN_TAG)
+            for term in terminal[1]:
+                etree.SubElement(span_node, TARGET_TAG, {TARGET_ID_ATTRIBUTE: term})
+
+        for edge in edges:
+            edge = etree.SubElement(tree, CONSTITUENCY_EDGES, {
+                CONSTITUENCY_EDGE_ID_ATTRIBUTE: edge[0],
+                CONSTITUENCY_EDGE_FORM_ATTRIBUTE: edge[1],
+                CONSTITUENCY_EDGE_TO_ATTRIBUTE: edge[2]})
+            if len(edge) > 3:
+                edge[CHUNK_HEAD_ATTRIBUTE] = edge[3]
+        return tree
 
     def add_entity(self, eid, entity_type, references=()):
         """ Add a entity in the document.
-        :param id: The identification code of the entity.
+
+        :param eid: The identification code of the entity.
         :param references: The references (ids of the terms) contained in the entity.
         :param entity_type: The type of the entity.
         """
@@ -341,79 +477,81 @@ class NAFDocument:
         entity_attributes = {NAMED_ENTITY_ID_ATTRIBUTE: eid}
         if entity_type:
             entity_attributes[NAMED_ENTITY_TYPE_ATTRIBUTE] = entity_type
-        entity = etree.SubElement(self.entities, NAMED_ENTITY_OCCURRENCE_TAG, entity_attributes,NAMED_ENTITY_REFERENCES_GROUP_TAG)
+        entity = etree.SubElement(self.entities, NAMED_ENTITY_OCCURRENCE_TAG, entity_attributes)
         references_tag = etree.SubElement(entity, "references")
         if references:
-            for reference,form in references:
-                comment = etree.Comment(form.decode("utf-8").replace("-"," - "))
-                entity.append(comment)
+            for reference in references:
                 span = etree.SubElement(references_tag, SPAN_TAG)
                 for token in reference:
                     etree.SubElement(span, TARGET_TAG, {TARGET_ID_ATTRIBUTE: token})
         return entity
 
-    def get_constituency_trees(self):
-        """Return all the constituency trees in the document"""
-        return self.root.findall("{0}/{1}".format(CONSTITUENCY_LAYER, CONSTITUENCY_TREE_TAG))
-
-    def get_contituent_tree_non_terminals(self, tree):
-        """Get al the non terminal constituents of the tree."""
-        return tree.findall(CONSTITUENCY_NON_TERMINALS)
-
-    def get_contituent_tree_terminals(self, tree):
-        """Get al the terminal constituents of the tree."""
-        return tree.findall(CONSTITUENCY_TERMINALS)
-
-    def get_contituent_tree_edges(self, tree):
-        """Get al the edges of the tree."""
-        return tree.findall(CONSTITUENCY_EDGES)
-
-    def get_contituent_terminal_words(self, chunk):
-        """Return all the terms of a terminal constituent."""
-        return chunk.findall("{0}/{1}".format(SPAN_TAG, TARGET_TAG))
-
     def get_entities(self):
         """Return all the Named Entities in the document"""
-        return self.root.findall("{0}/{1}".format(NAMED_ENTITIES_LAYER_TAG, NAMED_ENTITY_OCCURRENCE_TAG))
+        return self.root.findall("{0}/{1}".format(
+            NAMED_ENTITIES_LAYER_TAG, NAMED_ENTITY_OCCURRENCE_TAG))
 
-    def get_entity_references(self, named_entity):
-        """Return all the terms of a  Named Entities in the document"""
+    @staticmethod
+    def get_entity_references(named_entity):
+        """Return all the terms of a  Named Entities in the document.
+        :param named_entity: The entity whose references are wanted."""
         return named_entity.findall("{0}/{1}".format(NAMED_ENTITY_REFERENCES_GROUP_TAG, SPAN_TAG))
-
-    def get_entity_reference_span(self, reference):
-        """Return all the terms of a  Named Entities in the document"""
-        return reference.findall(TARGET_TAG)
 
     def add_coreference(self, coid, references=()):
         """ Add a coreference cluster to the document.
         :param coid: The identification code of the cluster.
         :param references: The references contained in the cluster
         """
-        if self.coreferences is None:
-            self.coreferences = etree.SubElement(self.root, COREFERENCE_LAYER_TAG)
+        if self.coreference is None:
+            self.coreference = etree.SubElement(self.root, COREFERENCE_LAYER_TAG)
 
         coref_attrib = {COREFERENCE_ID_ATTRIBUTE: coid}
-        entity = etree.SubElement(self.coreferences, COREFERENCE_OCCURRENCE_TAG, coref_attrib)
+        entity = etree.SubElement(self.coreference, COREFERENCE_OCCURRENCE_TAG, coref_attrib)
 
         if references:
-            for reference, form in references:
-                comment = etree.Comment(form.decode("utf-8").replace("-"," - "))
-                entity.append(comment)
+            for reference in references:
+                #comment = etree.Comment(form.decode("utf-8").replace("-", " - "))
+                #entity.append(comment)
                 span = etree.SubElement(entity, SPAN_TAG)
                 for token in reference:
                     etree.SubElement(span, TARGET_TAG, {TARGET_ID_ATTRIBUTE: token})
         return entity
 
-    def indent(self, elem, level=0):
+    def get_coreference(self):
+        """Return all the coreference entity in the document"""
+        return self.root.findall("{0}/{1}".format(
+            COREFERENCE_LAYER_TAG, COREFERENCE_OCCURRENCE_TAG))
+
+    @staticmethod
+    def get_coreference_mentions(named_entity):
+        """Return all the terms of a  Named Entities in the document.
+        :param named_entity: The entity whose references are wanted."""
+        return named_entity.findall("{0}".format(SPAN_TAG))
+
+    @staticmethod
+    def get_reference_span(reference):
+        """Return all the terms of a reference in the document.
+
+        :param reference: The reference node whose terms are wanted."""
+        return reference.findall(TARGET_TAG)
+
+    def _indent(self, elem, level=0):
+        """ Include indentation in the output making it more human readable.
+
+        :param elem: Element to indent.
+        :param level: Level of indentation.
+        """
         i = "\n" + level * "  "
+        child = None
         if len(elem):
             if not elem.text or not elem.text.strip():
                 elem.text = i + "  "
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
             for child in elem:
-                self.indent(child, level+1)
-            if not child.tail or not child.tail.strip():
+                self._indent(child, level+1)
+            # This seeks for the las child processed in for, is not a code indentation error
+            if child and (not child.tail) or (not child.tail.strip()):
                 child.tail = i
         else:
             if level and (not elem.tail or not elem.tail.strip()):
@@ -421,6 +559,8 @@ class NAFDocument:
 
     def write(self, output, encoding):
         """Write document into a file.
-        :param output: The output target for the document. May be a file type object or a file name."""
-        self.indent(self.root)
-        output.write(etree.tostring(self.root, encoding=encoding,))#, pretty_print=True, xml_declaration=True, with_comments=True))
+        :param output: The output target for the document. May be a file type object or a file name.
+        :param encoding: The encoding of the output.
+        """
+        self._indent(self.root)
+        output.write(etree.tostring(self.root, encoding=encoding,))
