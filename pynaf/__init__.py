@@ -19,8 +19,8 @@ NAME_ATTRIBUTE = "name"
 LINGUISTIC_PROCESSOR_HEAD = "linguisticProcessors"
 LAYER_ATTRIBUTE = "layer"
 LINGUISTIC_PROCESSOR_OCCURRENCE_TAG = "lp"
-TIMESTAMP_ATTRIBUTE = "timestamp"
-
+BEGIN_TIMESTAMP_ATTRIBUTE = "beginTimestamp"
+END_TIMESTAMP_ATTRIBUTE = "endTimestamp"
 # Text layer
 TEXT_LAYER_TAG = "text"
 WORD_OCCURRENCE_TAG = "wf"
@@ -189,14 +189,15 @@ class NAFDocument:
             self.kaf_header = kaf_header
             self.root.append(self.kaf_header)
 
-    def add_linguistic_processors(self, layer, name, version, time_stamp):
+    def add_linguistic_processors(self, layer, name, version, begin_timestamp, end_timestamp):
         """Add a Linguistic processor to the head.
 
 
         :param layer: Linguistic layer name
         :param name: Processor name
         :param version: Processor version
-        :param time_stamp: Processing time Stamp
+        :param begin_timestamp: Processing time Stamp
+        :param end_timestamp: Processing time Stamp
         """
         if not self.kaf_header:
             self.kaf_header = etree.SubElement(self.root, KAF_HEADER_TAG)
@@ -212,7 +213,9 @@ class NAFDocument:
         etree.SubElement(layer, LINGUISTIC_PROCESSOR_OCCURRENCE_TAG,
                          {NAME_ATTRIBUTE: name,
                           VERSION_ATTRIBUTE: version,
-                          TIMESTAMP_ATTRIBUTE: time_stamp})
+                          BEGIN_TIMESTAMP_ATTRIBUTE: begin_timestamp,
+                          END_TIMESTAMP_ATTRIBUTE: end_timestamp
+                         })
 
     def add_word(self, word, wid, **kwargs):
         """Add a word to the KAF file.
