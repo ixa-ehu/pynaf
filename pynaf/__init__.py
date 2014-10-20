@@ -193,11 +193,11 @@ class NAFDocument:
         """Add a Linguistic processor to the head.
 
 
-        :param layer: Linguistic layer name
-        :param name: Processor name
-        :param version: Processor version
-        :param begin_timestamp: Processing time Stamp
-        :param end_timestamp: Processing time Stamp
+        :param layer: Linguistic layer name.
+        :param name: Processor name.
+        :param version: Processor version.
+        :param begin_timestamp: Processing start timestamp
+        :param end_timestamp: Processing end timestamp
         """
         if not self.kaf_header:
             self.kaf_header = etree.SubElement(self.root, KAF_HEADER_TAG)
