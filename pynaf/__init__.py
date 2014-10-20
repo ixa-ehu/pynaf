@@ -21,6 +21,7 @@ LAYER_ATTRIBUTE = "layer"
 LINGUISTIC_PROCESSOR_OCCURRENCE_TAG = "lp"
 BEGIN_TIMESTAMP_ATTRIBUTE = "beginTimestamp"
 END_TIMESTAMP_ATTRIBUTE = "endTimestamp"
+HOSTNAME_ATTRIBUTE = "hostname"
 # Text layer
 TEXT_LAYER_TAG = "text"
 WORD_OCCURRENCE_TAG = "wf"
@@ -189,7 +190,8 @@ class NAFDocument:
             self.kaf_header = kaf_header
             self.root.append(self.kaf_header)
 
-    def add_linguistic_processors(self, layer, name, version, begin_timestamp, end_timestamp):
+    def add_linguistic_processors(self, layer, name, version, begin_timestamp, end_timestamp,
+                                  hostname):
         """Add a Linguistic processor to the head.
 
 
@@ -214,7 +216,8 @@ class NAFDocument:
                          {NAME_ATTRIBUTE: name,
                           VERSION_ATTRIBUTE: version,
                           BEGIN_TIMESTAMP_ATTRIBUTE: begin_timestamp,
-                          END_TIMESTAMP_ATTRIBUTE: end_timestamp
+                          END_TIMESTAMP_ATTRIBUTE: end_timestamp,
+                          HOSTNAME_ATTRIBUTE: hostname,
                          })
 
     def add_word(self, word, wid, **kwargs):
