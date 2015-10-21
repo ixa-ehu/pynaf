@@ -121,10 +121,13 @@ class NAFDocument:
             self.root.set(VERSION_ATTRIBUTE, version)
 
         headers = self.tree.find(KAF_HEADER_TAG)
-        if headers is not None and len(headers):
+        if headers is not None:
             self.kaf_header = headers
         else:
-            self.kaf_header = None
+            # create nafheader element and put it in the beginning of
+            # the document
+            self.kaf_header = etree.Element(KAF_HEADER_TAG)
+            self.root.insert(0, self.kaf_header)
 
         if header:
             self.set_header(header)
@@ -188,7 +191,7 @@ class NAFDocument:
             self.kaf_header.attrib.update(kaf_header.attrib)
         else:
             self.kaf_header = kaf_header
-            self.root.append(self.kaf_header)
+            self.root.insert(0, self.kaf_header)
 
     def add_linguistic_processors(self, layer, name, version, begin_timestamp, end_timestamp,
                                   hostname):
@@ -201,8 +204,9 @@ class NAFDocument:
         :param begin_timestamp: Processing start timestamp
         :param end_timestamp: Processing end timestamp
         """
-        if not self.kaf_header:
-            self.kaf_header = etree.SubElement(self.root, KAF_HEADER_TAG)
+        if self.kaf_header is None:
+            self.kaf_header = etree.Element(KAF_HEADER_TAG)
+            self.root.insert(0, self.kaf_header)
 
         layer_find = self.kaf_header.find("./{0}..[@{1}='{2}']".format(
             LINGUISTIC_PROCESSOR_HEAD, LAYER_ATTRIBUTE, layer))
