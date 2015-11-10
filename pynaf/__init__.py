@@ -127,7 +127,7 @@ class NAFDocument:
         else:
             # create nafheader element and put it in the beginning of
             # the document
-            self.kaf_header = etree.Element(KAF_HEADER_TAG)
+            self.kaf_header = etree.Element(self.KAF_HEADER_TAG)
             self.root.insert(0, self.kaf_header)
 
         if header:
@@ -209,7 +209,7 @@ class NAFDocument:
 
         """
         if self.kaf_header is None:
-            self.kaf_header = etree.Element(KAF_HEADER_TAG)
+            self.kaf_header = etree.Element(self.KAF_HEADER_TAG)
             self.root.insert(0, self.kaf_header)
 
         layer_find = self.kaf_header.find("./{0}..[@{1}='{2}']".format(
