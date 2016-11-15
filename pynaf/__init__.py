@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 from logging import getLogger
 from lxml import etree
-
+#from xml import etree
 __author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
 
 
@@ -99,6 +99,7 @@ class NAFDocument:
                  version="2.0", header=None, encoding="utf-8",
                  dtd_validation=False):
         """ Prepare the document basic structure."""
+        self.encoding = encoding
         self.logger = getLogger(__name__)
         parser = etree.XMLParser(
             remove_comments=False, dtd_validation=dtd_validation)
@@ -184,7 +185,7 @@ class NAFDocument:
     def set_header(self, kaf_header):
         """ Append headers to the head. If head doesn't exist it is created.
 
-        @param kaf_header: A dict that contains header elements and
+        :param kaf_header: A dict that contains header elements and
         their attributes
         """
         if self.kaf_header:
@@ -200,12 +201,12 @@ class NAFDocument:
         """Add a Linguistic processor to the head.
 
 
-        @param layer: Linguistic layer name.
-        @param name: Processor name.
-        @param version: Processor version.
-        @param begin_timestamp: Processing start timestamp
-        @param end_timestamp: Processing end timestamp
-        @param hostname: name of the procesing machine
+        :param layer: Linguistic layer name.
+        :param name: Processor name.
+        :param version: Processor version.
+        :param begin_timestamp: Processing start timestamp
+        :param end_timestamp: Processing end timestamp
+        :param hostname: name of the procesing machine
 
         """
         if self.kaf_header is None:
@@ -233,9 +234,9 @@ class NAFDocument:
     def add_word(self, word, wid, **kwargs):
         """Add a word to the KAF file.
         A word have the next parameters/attributes;
-        @param word: The word form
-        @param wid: the unique id for the word form.
-        @param kwargs: The word optional parameters
+        :param word: The word form
+        :param wid: the unique id for the word form.
+        :param kwargs: The word optional parameters
             + sent: sentence id of the token (optional)
             + para: paragraph id (optional)
             + offset: the offset of the word form (optional)
@@ -259,7 +260,7 @@ class NAFDocument:
 
     def get_words_by_id(self, wid):
         """ Return all the words in the document
-        @param wid: WID of the word to retrieve.
+        :param wid: WID of the word to retrieve.
         """
         results = self.text.find("{0}[@{1}='{2}']".format(
             self.WORD_OCCURRENCE_TAG, self.WORD_ID_ATTRIBUTE, wid))
@@ -269,20 +270,20 @@ class NAFDocument:
                  term_type=None, words=(), ner=None, external_refs=()):
         """Add a term to the kaf file.
         A Term have the next parameters/attributes:
-        @param tid: unique identifier
-        @param term_type: type of the term. Currently, 3 values are possible:
+        :param tid: unique identifier
+        :param term_type: type of the term. Currently, 3 values are possible:
                 + open: open category term
                 + close: close category term
-        @param lemma: lemma of the term
-        @param pos: part of speech
-        @param morphofeat: PennTreebank part of speech tag
-        @param words: a list of id of the bounded words.
-        @param external_refs: A list of dictionaries that contains the external
+        :param lemma: lemma of the term
+        :param pos: part of speech
+        :param morphofeat: PennTreebank part of speech tag
+        :param words: a list of id of the bounded words.
+        :param external_refs: A list of dictionaries that contains the external
          references. Each reference have:
                     + resource
                     + reference
                     + INCOMPLETE
-        @param ner: Term NER attribute.
+        :param ner: Term NER attribute.
         """
         if self.terms is None:
             self.terms = etree.SubElement(self.root, self.TERMS_LAYER_TAG)
@@ -331,7 +332,7 @@ class NAFDocument:
 
     def get_terms_words(self, term):
         """ Get the words that forms the term.
-        @param term: Term node whose words are wanted.
+        :param term: Term node whose words are wanted.
 
         """
         return term.findall(
@@ -339,7 +340,7 @@ class NAFDocument:
 
     def get_terms_references(self, term):
         """ Get references of a term.
-        @param term: the term whose references are wanted.
+        :param term: the term whose references are wanted.
 
         """
         return term.findall(
@@ -350,9 +351,9 @@ class NAFDocument:
     def add_dependency(self, origen, to, rfunc):
         """Add a new dependency relation in the text.
         The dependency have the next parameters/attributes:
-        @param origen: term id of the source element
-        @param to: term id of the target element
-        @param rfunc: relational function. One of:
+        :param origen: term id of the source element
+        :param to: term id of the target element
+        :param rfunc: relational function. One of:
                 - mod: indicates the word introducing the dependent in a
                 head- modifier relation.
                 - subj: indicates the subject in the grammatical relation
@@ -391,16 +392,16 @@ class NAFDocument:
         """"Add a chunk to the kaf document.
         Chunks are noun or prepositional phrases, spanning terms.
 
-        @param cid: unique identifier
-        @param head: the chunk head's term id
-        @param phrase: typo of the phrase.Valid values:
+        :param cid: unique identifier
+        :param head: the chunk head's term id
+        :param phrase: typo of the phrase.Valid values:
                         - NP: noun phrase
                         - VP: verbal phrase
                         - PP: prepositional phrase
                         - S: sentence
                         - O: other
-        @param case: (optional): declension case
-        @param terms: terms that form the chunk.
+        :param case: (optional): declension case
+        :param terms: terms that form the chunk.
         """
         # Secure the root
         if not self.chunks:
@@ -431,7 +432,7 @@ class NAFDocument:
 
     def get_chunk_terms(self, chunk):
         """Return all the terms of a chunk.
-        @param chunk: The chunk node whose terms are wanted"""
+        :param chunk: The chunk node whose terms are wanted"""
         return chunk.findall(
             "{0}/{1}".format(self.SPAN_TAG, self.TARGET_TAG))
 
@@ -443,25 +444,25 @@ class NAFDocument:
 
     def get_constituent_tree_non_terminals(self, tree):
         """Get all the non terminal constituents of the tree.
-        @param tree: The tree whose elements are wanted.
+        :param tree: The tree whose elements are wanted.
         """
         return tree.findall(self.CONSTITUENCY_NON_TERMINALS)
 
     def get_constituent_tree_terminals(self, tree):
         """Get all the terminal constituents of the tree.
-        @param tree: The tree whose elements are wanted.
+        :param tree: The tree whose elements are wanted.
         """
         return tree.findall(self.CONSTITUENCY_TERMINALS)
 
     def get_constituent_tree_edges(self, tree):
         """Get all the edges of the tree.
-        @param tree: The tree whose elements are wanted.
+        :param tree: The tree whose elements are wanted.
         """
         return tree.findall(self.CONSTITUENCY_EDGES)
 
     def get_constituent_terminal_words(self, constituent):
         """Return all the terms of a terminal constituent.
-        @param constituent: The constituent whose terminal words are wanted.
+        :param constituent: The constituent whose terminal words are wanted.
         """
         return constituent.findall(
             "{0}/{1}".format(self.SPAN_TAG, self.TARGET_TAG))
@@ -470,11 +471,11 @@ class NAFDocument:
         """ Create and attach the tree to the document and include al
         no-terminals, terminals and edges that conforms the tree.
 
-        @param no_terminals: no terminal tuples:
+        :param no_terminals: no terminal tuples:
         (constituent_id, constituent_Label)
-        @param terminals: Terminal tuples:
+        :param terminals: Terminal tuples:
         (constituent_id, [term_id])
-        @param edges:  Edge tuples:
+        :param edges:  Edge tuples:
         (edge_id, form_id,to_id, head) head is optional(default = false)
         """
         if self.constituency is None:
@@ -514,10 +515,10 @@ class NAFDocument:
     def add_entity(self, eid, entity_type, references=()):
         """ Add a entity in the document.
 
-        @param eid: The identification code of the entity.
-        @param references: The references (ids of the terms) contained in the
+        :param eid: The identification code of the entity.
+        :param references: The references (ids of the terms) contained in the
         entity.
-        @param entity_type: The type of the entity.
+        :param entity_type: The type of the entity.
         """
 
         if self.entities is None:
@@ -550,16 +551,16 @@ class NAFDocument:
 
     def get_entity_references(self, named_entity):
         """Return all the terms of a  Named Entities in the document.
-        @param named_entity: The entity whose references are wanted."""
+        :param named_entity: The entity whose references are wanted."""
         return named_entity.findall(
             "{0}/{1}".format(
                 self.NAMED_ENTITY_REFERENCES_GROUP_TAG, self.SPAN_TAG))
 
     def add_coreference(self, coid, references=(), forms=None):
         """ Add a coreference cluster to the document.
-        @param coid: The identification code of the cluster.
-        @param references: The references contained in the cluster
-        @param forms: The forms of the coreference mentions
+        :param coid: The identification code of the cluster.
+        :param references: The references contained in the cluster
+        :param forms: The forms of the coreference mentions
 
         """
         if self.coreference is None:
@@ -594,20 +595,20 @@ class NAFDocument:
 
     def get_coreference_mentions(self, named_entity):
         """Return all the terms of a  Named Entities in the document.
-        @param named_entity: The entity whose references are wanted."""
+        :param named_entity: The entity whose references are wanted."""
         return named_entity.findall("{0}".format(self.SPAN_TAG))
 
     def get_reference_span(self, reference):
         """Return all the terms of a reference in the document.
 
-        @param reference: The reference node whose terms are wanted."""
+        :param reference: The reference node whose terms are wanted."""
         return reference.findall(self.TARGET_TAG)
 
     def _indent(self, elem, level=0):
         """ Include indentation in the output making it more human readable.
 
-        @param elem: Element to indent.
-        @param level: Level of indentation.
+        :param elem: Element to indent.
+        :param level: Level of indentation.
         """
         i = "\n" + level * "  "
         child = None
@@ -620,28 +621,32 @@ class NAFDocument:
                 self._indent(child, level+1)
             # This seeks for the las child processed in for, is not a code
             # indentation error
-            if child and (not child.tail) or (not child.tail.strip()):
+            if child is not None and (not child.tail) or (not child.tail.strip()):
                 child.tail = i
         else:
-            if level and (not elem.tail or not elem.tail.strip()):
+            if level is not None and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
 
     def validateExternalDTD(self, source):
         """  Validate the current NAF document against the DTD.
-        @param source: The DTD source
-        @return True or False
+        :param source: The DTD source
+        :return True or False
         """
         dtd = etree.DTD(source)
         return dtd.validate(self.root)
 
     def write(self, output, encoding):
         """Write document into a file.
-        @param output: The output target for the document. May be a file type
+        :param output: The output target for the document. May be a file type
          object or a file name.
-        @param encoding: The encoding of the output.
+        :param encoding: The encoding of the output.
         """
         self._indent(self.root)
         output.write(etree.tostring(self.root, encoding=encoding,))
+
+    def __str__(self):
+        self._indent(self.root)
+        return etree.tostring(self.root, encoding=self.encoding)
 
 
 class KAFDocument(NAFDocument):
