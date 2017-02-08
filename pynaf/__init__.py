@@ -632,8 +632,8 @@ class NAFDocument:
         :param source: The DTD source
         :return True or False
         """
-        dtd = etree.DTD(source)
-        return dtd.validate(self.root)
+        self.dtd = etree.DTD(source)
+        return self.dtd.validate(self.root)
 
     def write(self, output, encoding):
         """Write document into a file.
