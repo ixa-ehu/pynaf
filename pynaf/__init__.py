@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 from logging import getLogger
 from lxml import etree
-#from xml import etree
+
 __author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
 
 
@@ -503,13 +503,15 @@ class NAFDocument:
                 })
 
         for edge in edges:
-            edge = etree.SubElement(tree, self.CONSTITUENCY_EDGES, {
+            attrib = {
                 self.CONSTITUENCY_EDGE_ID_ATTRIBUTE: edge[0],
                 self.CONSTITUENCY_EDGE_FORM_ATTRIBUTE: edge[1],
-                self.CONSTITUENCY_EDGE_TO_ATTRIBUTE: edge[2]
-            })
+                self.CONSTITUENCY_EDGE_TO_ATTRIBUTE: edge[2]}
             if len(edge) > 3:
-                edge[self.CHUNK_HEAD_ATTRIBUTE] = edge[3]
+                attrib[self.CHUNK_HEAD_ATTRIBUTE] = edge[3]
+
+            etree.SubElement(tree, self.CONSTITUENCY_EDGES, attrib)
+
         return tree
 
     def add_entity(self, eid, entity_type, references=()):
