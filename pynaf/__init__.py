@@ -26,6 +26,10 @@ class NAFDocument:
     BEGIN_TIMESTAMP_ATTRIBUTE = "beginTimestamp"
     END_TIMESTAMP_ATTRIBUTE = "endTimestamp"
     HOSTNAME_ATTRIBUTE = "hostname"
+
+    # Raw layer
+    RAW_LAYER_TAG = "raw"
+
     # Text layer
     TEXT_LAYER_TAG = "text"
     WORD_OCCURRENCE_TAG = "wf"
@@ -134,6 +138,12 @@ class NAFDocument:
         if header:
             self.set_header(header)
 
+        raw_layer = self.tree.find(self.RAW_LAYER_TAG)
+        if raw_layer is not None and len(raw_layer):
+            self.raw = raw_layer
+        else:
+            self.raw = etree.SubElement(self.root, self.RAW_LAYER_TAG)
+
         text_layer = self.tree.find(self.TEXT_LAYER_TAG)
         if text_layer is not None and len(text_layer):
             self.text = text_layer
@@ -230,6 +240,26 @@ class NAFDocument:
                 self.END_TIMESTAMP_ATTRIBUTE: end_timestamp,
                 self.HOSTNAME_ATTRIBUTE: hostname,
              })
+
+    def add_raw_text(self, raw_text):
+        """Add a Raw layer to the KAF file.
+
+        :param raw_text: The original text.
+        """
+        if self.raw is None:
+            self.raw = etree.SubElement(self.root, self.RAW_LAYER_TAG)
+
+        self.raw.text = etree.CDATA(raw_text)
+
+    def get_raw_text(self):
+        """ Return the raw text of the
+
+        :return:
+        """
+        try:
+            return self.raw.text
+        except:
+            return None
 
     def add_word(self, word, wid, **kwargs):
         """Add a word to the KAF file.
