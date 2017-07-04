@@ -338,8 +338,12 @@ class NAFDocument:
             for word in words:
                 etree.SubElement(
                     span, self.TARGET_TAG, {self.TARGET_ID_ATTRIBUTE: word})
+        self.add_external_refs(term, external_refs)
+        return term
+
+    def add_external_refs(self, elem, external_refs=()):
         if external_refs:
-            span = etree.SubElement(term, self.EXTERNAL_REFERENCES_TAG)
+            span = etree.SubElement(elem, self.EXTERNAL_REFERENCES_TAG)
             for external_ref in external_refs:
                 ref_attributes = dict(
                     (k, v)
@@ -353,7 +357,6 @@ class NAFDocument:
                 etree.SubElement(
                     span, self.EXTERNAL_REFERENCE_OCCURRENCE_TAG,
                     ref_attributes)
-        return term
 
     def get_terms(self):
         """ Return all the words in the document"""
@@ -588,11 +591,12 @@ class NAFDocument:
             "{0}/{1}".format(
                 self.NAMED_ENTITY_REFERENCES_GROUP_TAG, self.SPAN_TAG))
 
-    def add_coreference(self, coid, references=(), forms=None):
+    def add_coreference(self, coid, references=(), forms=None, external_refs=()):
         """ Add a coreference cluster to the document.
         :param coid: The identification code of the cluster.
         :param references: The references contained in the cluster
         :param forms: The forms of the coreference mentions
+        :param external_refs: A list of dictionaries that contains the external
 
         """
         if self.coreference is None:
@@ -616,6 +620,7 @@ class NAFDocument:
                     etree.SubElement(
                         span, self.TARGET_TAG, {
                             self.TARGET_ID_ATTRIBUTE: token})
+        self.add_external_refs(entity, external_refs)
         return entity
 
     def get_coreference(self):
