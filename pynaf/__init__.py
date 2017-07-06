@@ -599,7 +599,7 @@ class NAFDocument:
         :param references: The references contained in the cluster
         :param forms: The forms of the coreference mentions
         :param external_refs: A list of dictionaries that contains the external
-        :param heads: Heads of each cluster
+        :param heads: The heads of the coreference mentions
 
         """
         if self.coreference is None:
