@@ -88,6 +88,8 @@ class NAFDocument:
     SPAN_TAG = "span"
     TARGET_ID_ATTRIBUTE = "id"
     TARGET_TAG = "target"
+    TARGET_HEAD_ATTRIBUTE = "head"
+    TARGET_HEAD_YES = "yes"
 
     # External references
 
@@ -591,12 +593,13 @@ class NAFDocument:
             "{0}/{1}".format(
                 self.NAMED_ENTITY_REFERENCES_GROUP_TAG, self.SPAN_TAG))
 
-    def add_coreference(self, coid, references=(), forms=None, external_refs=()):
+    def add_coreference(self, coid, references=(), forms=None, external_refs=(), heads=()):
         """ Add a coreference cluster to the document.
         :param coid: The identification code of the cluster.
         :param references: The references contained in the cluster
         :param forms: The forms of the coreference mentions
         :param external_refs: A list of dictionaries that contains the external
+        :param heads: The heads of the coreference mentions
 
         """
         if self.coreference is None:
@@ -608,6 +611,8 @@ class NAFDocument:
             self.coreference, self.COREFERENCE_OCCURRENCE_TAG, coref_attrib)
         if forms:
             forms = iter(forms)
+        if heads:
+            heads = iter(heads)
         if references:
             for reference in references:
                 if forms:
@@ -615,11 +620,20 @@ class NAFDocument:
                     comment = etree.Comment(
                         form.decode("utf-8").replace("-", " - "))
                     entity.append(comment)
+                if heads:
+                    head = heads.next()
                 span = etree.SubElement(entity, self.SPAN_TAG)
                 for token in reference:
-                    etree.SubElement(
-                        span, self.TARGET_TAG, {
-                            self.TARGET_ID_ATTRIBUTE: token})
+                    if heads and token == head.decode("utf-8"):
+                        etree.SubElement(
+                            span, self.TARGET_TAG, 
+                            {self.TARGET_ID_ATTRIBUTE: token, 
+                                self.TARGET_HEAD_ATTRIBUTE: self.TARGET_HEAD_YES,
+                            })
+                    else:
+                        etree.SubElement(
+                            span, self.TARGET_TAG, {
+                                self.TARGET_ID_ATTRIBUTE: token})
         self.add_external_refs(entity, external_refs)
         return entity
 
