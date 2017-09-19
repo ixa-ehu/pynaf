@@ -345,7 +345,9 @@ class NAFDocument:
 
     def add_external_refs(self, elem, external_refs=()):
         if external_refs:
-            span = etree.SubElement(elem, self.EXTERNAL_REFERENCES_TAG)
+            span = elem.find(self.EXTERNAL_REFERENCES_TAG)
+            if span is None:
+                span = etree.SubElement(elem, self.EXTERNAL_REFERENCES_TAG)
             for external_ref in external_refs:
                 ref_attributes = dict(
                     (k, v)
@@ -364,6 +366,14 @@ class NAFDocument:
         """ Return all the words in the document"""
         return self.root.findall(
             "{0}/{1}".format(self.TERMS_LAYER_TAG, self.TERM_OCCURRENCE_TAG))
+
+    def get_term(self, termId):
+        """ Get the term.
+        :param termId: Id of the Term node wanted.
+
+        """
+        return self.root.xpath(
+            "//{0}[@id='{1}']".format(self.TERM_OCCURRENCE_TAG, termId))[0]
 
     def get_terms_words(self, term):
         """ Get the words that forms the term.
