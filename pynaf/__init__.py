@@ -1,16 +1,14 @@
-
 from __future__ import unicode_literals
 
-"""Module for manage NAF formatted files. """
+"""Module to manage NAF files. """
 
 from logging import getLogger
 from lxml import etree
 
-__author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.es>'
-
+__author__ = 'Rodrigo Agerri <rodrigo.agerri@ehu.eus>'
 
 class NAFDocument:
-    """ Manage a NAF document.
+    """ Define a class for the NAF document.
     """
     # CONSTANT TEXT VALUES USED TO CONSTRUCT NAF
     KAF_TAG = "NAF"
@@ -39,7 +37,6 @@ class NAFDocument:
     TERMS_LAYER_TAG = "terms"
     TERM_OCCURRENCE_TAG = "term"
     TERM_ID_ATTRIBUTE = "id"
-    NER_ATTRIBUTE = "ner"
     TYPE_ATTRIBUTE = "type"
     LEMMA_ATTRIBUTE = "lemma"
     POS_ATTRIBUTE = "pos"
@@ -84,6 +81,16 @@ class NAFDocument:
     NAMED_ENTITY_TYPE_ATTRIBUTE = "type"
     NAMED_ENTITY_REFERENCES_GROUP_TAG = "references"
 
+    # Opinions layer
+    OPINIONS_LAYER_TAG = "opinions"
+    OPINION_ELEM_TAG = "opinion"
+    OPINION_ID = "id"
+    OPINION_TARGET_ELEM_TAG = "opinion_target"
+    OPINION_EXPR_ELEM_TAG = "opinion_expression"
+    OPINION_EXPR_POLARITY_ATTRIBUTE = "polarity"
+    OPINION_EXPR_ASPECT_ATTRIBUTE = "sentiment_product_feature"
+    # TODO RETHINK THIS layer; aspect should not be an attribute of opinion expression
+
     # References tags
     SPAN_TAG = "span"
     TARGET_ID_ATTRIBUTE = "id"
@@ -102,7 +109,7 @@ class NAFDocument:
     valid_externalRef_attributes = ("resource", "reference")
 
     def __init__(self, file_name=None, input_stream=None, language=None,
-                 version="2.0", header=None, encoding="utf-8",
+                 version="3.0.0", header=None, encoding="utf-8",
                  dtd_validation=False):
         """ Prepare the document basic structure."""
         self.encoding = encoding
@@ -188,6 +195,12 @@ class NAFDocument:
         else:
             self.coreference = None
 
+        opinions_layer = self.tree.find(self.OPINIONS_LAYER_TAG)
+        if opinions_layer is not None and len(opinions_layer):
+            self.opinions = opinions_layer
+        else:
+            self.opinions = None
+
     def clear_header(self):
         """ Remove the kaf header
         """
@@ -210,9 +223,8 @@ class NAFDocument:
 
     def add_linguistic_processors(self, layer, name, version, begin_timestamp,
                                   end_timestamp, hostname):
-        """Add a Linguistic processor to the head.
-
-
+        """
+        Add a Linguistic processor to the head.
         :param layer: Linguistic layer name.
         :param name: Processor name.
         :param version: Processor version.
@@ -237,10 +249,10 @@ class NAFDocument:
         etree.SubElement(
             layer, self.LINGUISTIC_PROCESSOR_OCCURRENCE_TAG,
             {self.NAME_ATTRIBUTE: name,
-                self.VERSION_ATTRIBUTE: version,
-                self.BEGIN_TIMESTAMP_ATTRIBUTE: begin_timestamp,
-                self.END_TIMESTAMP_ATTRIBUTE: end_timestamp,
-                self.HOSTNAME_ATTRIBUTE: hostname,
+             self.VERSION_ATTRIBUTE: version,
+             self.BEGIN_TIMESTAMP_ATTRIBUTE: begin_timestamp,
+             self.END_TIMESTAMP_ATTRIBUTE: end_timestamp,
+             self.HOSTNAME_ATTRIBUTE: hostname,
              })
 
     def add_raw_text(self, raw_text):
@@ -299,23 +311,22 @@ class NAFDocument:
         return results and results[0]
 
     def add_term(self, tid, pos=None, lemma=None, morphofeat=None,
-                 term_type=None, words=(), ner=None, external_refs=()):
+                 term_type=None, words=(), external_refs=()):
         """Add a term to the kaf file.
         A Term have the next parameters/attributes:
         :param tid: unique identifier
-        :param term_type: type of the term. Currently, 3 values are possible:
+        :param term_type: type of the term. Currently, 2 values are possible:
                 + open: open category term
                 + close: close category term
         :param lemma: lemma of the term
         :param pos: part of speech
-        :param morphofeat: PennTreebank part of speech tag
-        :param words: a list of id of the bounded words.
+        :param morphofeat: fine-frained morphosyntactic tag
+        :param words: a list of id of the bounded words
         :param external_refs: A list of dictionaries that contains the external
          references. Each reference have:
                     + resource
                     + reference
                     + INCOMPLETE
-        :param ner: Term NER attribute.
         """
         if self.terms is None:
             self.terms = etree.SubElement(self.root, self.TERMS_LAYER_TAG)
@@ -331,8 +342,6 @@ class NAFDocument:
             word_attributes[self.TYPE_ATTRIBUTE] = term_type
         if morphofeat:
             word_attributes[self.MORPHOFEAT_ATTRIBUTE] = morphofeat
-        if ner:
-            word_attributes[self.NER_ATTRIBUTE] = ner
         term = etree.SubElement(
             self.terms, self.TERM_OCCURRENCE_TAG, word_attributes)
         if words:
@@ -562,7 +571,7 @@ class NAFDocument:
     def add_entity(self, eid, entity_type, references=()):
         """ Add a entity in the document.
 
-        :param eid: The identification code of the entity.
+        :param eid: The id of the entity.
         :param references: The references (ids of the terms) contained in the
         entity.
         :param entity_type: The type of the entity.
@@ -636,10 +645,10 @@ class NAFDocument:
                 for token in reference:
                     if heads and token == head.decode("utf-8"):
                         etree.SubElement(
-                            span, self.TARGET_TAG, 
-                            {self.TARGET_ID_ATTRIBUTE: token, 
-                                self.TARGET_HEAD_ATTRIBUTE: self.TARGET_HEAD_YES,
-                            })
+                            span, self.TARGET_TAG,
+                            {self.TARGET_ID_ATTRIBUTE: token,
+                             self.TARGET_HEAD_ATTRIBUTE: self.TARGET_HEAD_YES,
+                             })
                     else:
                         etree.SubElement(
                             span, self.TARGET_TAG, {
@@ -679,7 +688,7 @@ class NAFDocument:
             if not elem.tail or not elem.tail.strip():
                 elem.tail = i
             for child in elem:
-                self._indent(child, level+1)
+                self._indent(child, level + 1)
             # This seeks for the las child processed in for, is not a code
             # indentation error
             if child is not None and (not child.tail) or (not child.tail.strip()):
@@ -703,7 +712,7 @@ class NAFDocument:
         :param encoding: The encoding of the output.
         """
         self._indent(self.root)
-        output.write(etree.tostring(self.root, encoding=encoding,))
+        output.write(etree.tostring(self.root, encoding=encoding, ))
 
     def __str__(self):
         self._indent(self.root)
@@ -733,7 +742,6 @@ class KAFDocument(NAFDocument):
     TERMS_LAYER_TAG = "terms"
     TERM_OCCURRENCE_TAG = "term"
     TERM_ID_ATTRIBUTE = "tid"
-    NER_ATTRIBUTE = "ner"
     TYPE_ATTRIBUTE = "type"
     LEMMA_ATTRIBUTE = "lemma"
     POS_ATTRIBUTE = "pos"
