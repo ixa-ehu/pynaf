@@ -160,7 +160,7 @@ class NAFDocument:
             self.text = etree.SubElement(self.root, self.TEXT_LAYER_TAG)
 
         terms_layer = self.tree.find(self.TERMS_LAYER_TAG)
-        if text_layer is not None and len(terms_layer):
+        if terms_layer is not None and len(terms_layer):
             self.terms = terms_layer
         else:
             self.terms = None
