@@ -122,7 +122,7 @@ class NAFDocument:
             self.tree = etree.parse(file_name)
             self.root = self.tree.getroot()
         elif input_stream:
-            if isinstance(input_stream, unicode):
+            if isinstance(input_stream, str):
                 input_stream = input_stream.encode(encoding)
             self.root = etree.fromstring(input_stream)
             self.tree = etree.ElementTree(self.root)
@@ -716,7 +716,7 @@ class NAFDocument:
 
     def __str__(self):
         self._indent(self.root)
-        return etree.tostring(self.root, encoding=self.encoding)
+        return etree.tostring(self.root, encoding=self.encoding).decode(self.encoding)
 
 
 class KAFDocument(NAFDocument):
