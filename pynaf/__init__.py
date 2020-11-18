@@ -308,7 +308,7 @@ class NAFDocument:
         """
         results = self.text.find("{0}[@{1}='{2}']".format(
             self.WORD_OCCURRENCE_TAG, self.WORD_ID_ATTRIBUTE, wid))
-        return results and results[0]
+        return results  # and results[0]
 
     def add_term(self, tid, pos=None, lemma=None, morphofeat=None,
                  term_type=None, words=(), external_refs=()):
