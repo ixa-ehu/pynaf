@@ -122,7 +122,7 @@ class NAFDocument:
             self.tree = etree.parse(file_name)
             self.root = self.tree.getroot()
         elif input_stream:
-            if isinstance(input_stream, unicode):
+            if isinstance(input_stream, str):
                 input_stream = input_stream.encode(encoding)
             self.root = etree.fromstring(input_stream)
             self.tree = etree.ElementTree(self.root)
@@ -160,7 +160,7 @@ class NAFDocument:
             self.text = etree.SubElement(self.root, self.TEXT_LAYER_TAG)
 
         terms_layer = self.tree.find(self.TERMS_LAYER_TAG)
-        if text_layer is not None and len(terms_layer):
+        if terms_layer is not None and len(terms_layer):
             self.terms = terms_layer
         else:
             self.terms = None
@@ -290,7 +290,7 @@ class NAFDocument:
         # Prepare the word attributes
         word_attributes = dict(
             (k, v)
-            for (k, v) in kwargs.iteritems()
+            for (k, v) in kwargs.items()
             if k in self.valid_word_attributes)
         word_attributes[self.WORD_ID_ATTRIBUTE] = wid
         # Create a text sub-node for the word and set its attributes
@@ -308,7 +308,7 @@ class NAFDocument:
         """
         results = self.text.find("{0}[@{1}='{2}']".format(
             self.WORD_OCCURRENCE_TAG, self.WORD_ID_ATTRIBUTE, wid))
-        return results and results[0]
+        return results  # and results[0]
 
     def add_term(self, tid, pos=None, lemma=None, morphofeat=None,
                  term_type=None, words=(), external_refs=()):
@@ -716,7 +716,7 @@ class NAFDocument:
 
     def __str__(self):
         self._indent(self.root)
-        return etree.tostring(self.root, encoding=self.encoding)
+        return etree.tostring(self.root, encoding=self.encoding).decode(self.encoding)
 
 
 class KAFDocument(NAFDocument):

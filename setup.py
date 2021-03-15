@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name='pynaf',
-    version='3.0.0',
+    version='3.0.2',
     author='Rodrigo Agerri',
     author_email='rodrigo.agerri@ehu.eus',
     packages=['pynaf',],
